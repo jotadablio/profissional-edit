@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Pedido · Profissional Edit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:#06080C;color:#F2F5F9;font:17px/1.55 Inter,system-ui,sans-serif;display:flex;align-items:center;justify-content:center;padding:24px;background-image:linear-gradient(rgba(198,255,61,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(198,255,61,.045) 1px,transparent 1px);background-size:48px 48px}
+.box{width:100%;max-width:560px;background:#0C1017;border:1px solid #263042;border-radius:14px;padding:clamp(26px,6vw,44px);display:flex;flex-direction:column;gap:18px;text-align:center}
+.box.ok{border-color:#C6FF3D;box-shadow:0 0 70px rgba(198,255,61,.12)}
+h1{margin:0;font-family:'Space Grotesk',sans-serif;font-size:clamp(28px,6vw,38px);line-height:1.1}
+p{margin:0;color:#B4BDCB}
+.mono{font-family:'JetBrains Mono',monospace;font-size:13px;color:#8E98A8}
+.btn{display:flex;align-items:center;justify-content:center;background:#C6FF3D;color:#06080C;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:19px;text-decoration:none;padding:20px 24px;border-radius:6px}
+.btn.alt{background:transparent;color:#C6FF3D;border:1px solid #C6FF3D}
+.spin{width:36px;height:36px;border:3px solid #263042;border-top-color:#C6FF3D;border-radius:50%;margin:0 auto;animation:r 0.9s linear infinite}
+@keyframes r{to{transform:rotate(360deg)}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main class="box" id="box" aria-live="polite">
+  <div id="s-wait">
+    <div class="spin" aria-hidden="true"></div>
+    <h1 style="margin-top:18px">Confirmando seu pagamento…</h1>
+    <p style="margin-top:10px">No Pix isso costuma levar poucos segundos. Não feche esta página.</p>
+  </div>
+
+  <div id="s-ok" hidden>
+    <h1>Pagamento aprovado!</h1>
+    <p style="margin-top:10px">Sua Profissional Edit está liberada. Baixe agora e siga o passo a passo de instalação que vem no arquivo.</p>
+    <a class="btn" id="dl" href="#" style="margin-top:20px">Baixar a Profissional Edit</a>
+    <p class="mono" id="mail" style="margin-top:14px"></p>
+  </div>
+
+  <div id="s-pending" hidden>
+    <h1>Pagamento em análise</h1>
+    <p style="margin-top:10px">Assim que o pagamento for confirmado, você recebe o link de download no e-mail usado na compra. Você também pode deixar esta página aberta: ela atualiza sozinha.</p>
+  </div>
+
+  <div id="s-fail" hidden>
+    <h1>O pagamento não foi concluído</h1>
+    <p style="margin-top:10px">Nenhum valor foi cobrado. Você pode tentar de novo, de preferência com Pix.</p>
+    <a class="btn" href="/" style="margin-top:20px">Tentar novamente</a>
+  </div>
+
+  <div id="s-none" hidden>
+    <h1>Não encontramos o seu pedido</h1>
+    <p style="margin-top:10px">Se você pagou, o link de download chega no seu e-mail em alguns minutos. Se não chegar, fale com professionalskill@gmail.com informando o número do pagamento.</p>
+    <a class="btn alt" href="/" style="margin-top:20px">Voltar à página</a>
+  </div>
+</main>
+
+<script src="/assets/config.js"></script>
+<script src="/assets/lp.js"></script>
+<script>
+(function () {
+  var q = new URLSearchParams(location.search);
+  var sessionId = q.get('session_id'); // Stripe
+  var id = sessionId || q.get('payment_id') || q.get('collection_id'); // Mercado Pago
+  var mpStatus = q.get('status') || q.get('collection_status');
+  var tries = 0, maxTries = 36; // ~3 minutos
+
+  function show(name) {
+    ['wait', 'ok', 'pending', 'fail', 'none'].forEach(function (n) {
+      document.getElementById('s-' + n).hidden = n !== name;
+    });
+    document.getElementById('box').classList.toggle('ok', name === 'ok');
+  }
+
+  if (!id || id === 'null') {
+    show(mpStatus === 'failure' || mpStatus === 'rejected' || mpStatus === 'null' ? 'fail' : 'none');
+    return;
+  }
+
+  function check() {
+    tries++;
+    var qs = sessionId ? 'session_id=' + encodeURIComponent(sessionId) : 'payment_id=' + encodeURIComponent(id);
+    fetch('/api/verify?' + qs, { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.status === 'approved') {
+          var a = document.getElementById('dl');
+          if (d.downloadUrl) { a.href = d.downloadUrl; } else { a.hidden = true; }
+          if (d.emailHint) document.getElementById('mail').textContent = 'Também enviamos o link para ' + d.emailHint + '.';
+          show('ok');
+          // Evento de compra do Pixel, uma vez por pagamento.
+          var key = 'pe_purchase_' + d.paymentId, sent = false;
+          try { sent = localStorage.getItem(key); } catch (e) {}
+          if (!sent && window.LP_TRACK) {
+            var cfg = window.LP_CONFIG || {};
+            window.LP_TRACK('Purchase', { value: d.value, currency: cfg.currency || 'BRL', content_name: 'Profissional Edit' }, { eventID: 'pay_' + d.paymentId });
+            try { localStorage.setItem(key, '1'); } catch (e) {}
+          }
+          return;
+        }
+        if (d.status === 'rejected' || d.status === 'cancelled') return show('fail');
+        if (d.status === 'invalid' || d.status === 'not_found') return show('none');
+        // pending / in_process / erro temporário: tenta de novo
+        if (tries >= 3) show('pending');
+        if (tries < maxTries) setTimeout(check, 5000);
+      })
+      .catch(function () { if (tries < maxTries) setTimeout(check, 5000); else show('pending'); });
+  }
+  check();
+})();
+</script>
+</body>
+</html>

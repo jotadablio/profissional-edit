@@ -1,0 +1,10 @@
+{
+  "name": "profissional-edit-lp",
+  "private": true,
+  "type": "module",
+  "description": "Landing page da Profissional Edit com checkout Mercado Pago (Netlify)",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node tests/run.mjs"
+  }
+}

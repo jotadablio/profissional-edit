@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Profissional Edit · Seu vídeo editado pelo Claude</title>
+<meta name="description" content="Skill para o Claude que faz jump cut, efeitos de cenário, iluminação e efeitos sonoros. De R$ 199 por R$ 67.">
+<meta property="og:title" content="Profissional Edit · Seu vídeo editado enquanto você cuida do resto">
+<meta property="og:description" content="Skill para o Claude: jump cut, cenário, iluminação e efeitos sonoros. De R$ 199 por R$ 67.">
+<meta name="theme-color" content="#080B24">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--buy:#FF8A1F;--bg:#080B24;--bg2:#0B0F30;--card:#0E1338;--line:#232A5C;--line2:#2F387A;--ink:#F4F6FF;--mute:#C3CAEE;--dim:#A9B2DE;--cy:#4FE3FF;--or:#FF8A1F;--orink:#1A0E00}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.mono{font-family:'JetBrains Mono',monospace;font-size:13px}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif;margin:0}
+p{margin:0}
+.bar{background:var(--or);color:var(--orink);text-align:center;padding:10px 16px;font-weight:500;letter-spacing:.06em}
+.narrow{max-width:760px;margin:0 auto;padding:0 20px}
+.wide{max-width:960px;margin:0 auto;padding:0 20px}
+.hero{padding:36px 0 56px;display:flex;flex-direction:column;gap:22px;align-items:center;text-align:center}
+.brand{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px}
+.brand b{width:10px;height:10px;border-radius:50%;background:var(--cy);box-shadow:0 0 14px var(--cy);display:inline-block}
+.brand strong{font-family:'Space Grotesk',sans-serif;font-size:18px;letter-spacing:.04em}
+.pill{color:var(--dim);border:1px solid #3A4380;border-radius:3px;padding:3px 7px;font-size:12px}
+.hero h1{font-size:clamp(34px,7vw,64px);line-height:1.04;letter-spacing:-.02em;font-weight:700}
+.lead{font-size:clamp(17px,2.2vw,20px);color:var(--mute);max-width:600px}
+.video{width:100%;aspect-ratio:16/9;background:var(--card);border:1px solid var(--cy);border-radius:12px;box-shadow:0 0 60px rgba(79,227,255,.18);overflow:hidden;position:relative}
+.video video{width:100%;height:100%;display:block;object-fit:cover;background:#000}
+.video .ph{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;color:var(--dim)}
+.video.empty .ph{display:flex}.video.empty video{display:none}
+.btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;max-width:480px;background:var(--or);color:var(--orink);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;text-decoration:none;padding:22px 24px;border-radius:8px;box-shadow:0 0 40px rgba(255,138,31,.35);transition:transform .15s,box-shadow .15s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 0 56px rgba(255,138,31,.5)}
+.btn svg{flex:none}
+.band{background:var(--bg2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.sec{padding-top:64px;padding-bottom:64px;display:flex;flex-direction:column;gap:32px}
+.sec h2{font-size:clamp(28px,4.4vw,42px);line-height:1.1;font-weight:700;text-align:center}
+.feats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.feat{background:var(--card);border:1px solid var(--line2);border-radius:10px;padding:22px;display:flex;flex-direction:column;gap:10px}
+.feat h3{font-size:19px;font-weight:600}
+.feat p{color:var(--mute);font-size:15px}
+.offer{background:var(--card);border:1px solid var(--or);border-radius:14px;padding:clamp(26px,5vw,44px);display:flex;flex-direction:column;gap:16px;align-items:center;text-align:center;box-shadow:0 0 70px rgba(255,138,31,.14)}
+.old{font-size:18px;color:var(--dim);text-decoration:line-through}
+.big{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(68px,14vw,104px);line-height:.95}
+.req{color:var(--dim);border:1px dashed #3A4380;border-radius:6px;padding:14px 16px}
+.stack{display:flex;flex-direction:column;gap:12px}
+details{background:var(--card);border:1px solid var(--line2);border-radius:8px;padding:0 20px}
+summary{cursor:pointer;list-style:none;padding:18px 0;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:18px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:'+';float:right;color:var(--cy)}
+details[open] summary::after{content:'–'}
+details p{padding:0 0 20px;color:var(--mute)}
+footer{border-top:1px solid var(--line);padding:32px 0 96px;font-size:13px;color:var(--dim);text-align:center}
+footer a{color:var(--dim)}
+.sticky{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(8,11,36,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line2);display:none;gap:12px;align-items:center;justify-content:space-between;z-index:10}
+.sticky .btn{padding:14px 18px;font-size:16px;width:auto}
+@media (max-width:720px){.sticky.show{display:flex}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body data-page="b">
+
+<div class="bar mono">VALOR PROMOCIONAL: DE R$ 199 POR R$ 67</div>
+
+<section class="narrow hero">
+  <div class="brand">
+    <b aria-hidden="true"></b><strong>PROFISSIONAL EDIT</strong><span class="pill mono">SKILL PARA CLAUDE</span>
+  </div>
+  <h1 id="h1">Seu vídeo editado enquanto você cuida do resto.</h1>
+  <p class="lead" id="sub">A Profissional Edit é uma skill que faz o Claude aplicar jump cut, efeitos de cenário, iluminação e efeitos sonoros por você.</p>
+
+  <div class="video" id="video">
+    <!-- Coloque o vídeo de demonstração em public/assets/demo.mp4 (e a capa em demo.jpg). -->
+    <video src="/assets/demo.mp4" poster="/assets/demo.jpg" controls playsinline muted preload="metadata"></video>
+    <div class="ph">
+      <svg aria-hidden="true" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#4FE3FF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z"/></svg>
+      <span class="mono">Vídeo de demonstração em breve</span>
+    </div>
+  </div>
+
+  <a class="btn" data-buy href="/api/checkout?src=b">Quero a skill por R$ 67
+    <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></a>
+  <span class="mono" style="color:var(--dim)">Pagamento único · Pix ou cartão · 7 dias de garantia</span>
+</section>
+
+<section class="band">
+<div class="wide sec">
+  <h2>Pare de fazer mais do mesmo. A skill faz por você.</h2>
+  <div class="feats">
+    <div class="feat">
+      <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4FE3FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9"/><path d="M14.5 14.5L20 20"/></svg>
+      <h3>Jump cut</h3><p>Pausas fora, ritmo dentro.</p>
+    </div>
+    <div class="feat">
+      <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4FE3FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 15l5-4 4 3 3-2 6 4"/></svg>
+      <h3>Efeitos de cenário</h3><p>Fundo suavizado ou marcado.</p>
+    </div>
+    <div class="feat">
+      <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4FE3FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3"/><path d="M12 19v3"/><path d="M2 12h3"/><path d="M19 12h3"/><path d="M5 5l2 2"/><path d="M17 17l2 2"/><path d="M19 5l-2 2"/><path d="M7 17l-2 2"/></svg>
+      <h3>Iluminação</h3><p>Luz ajustada no processo.</p>
+    </div>
+    <div class="feat">
+      <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4FE3FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4"/><path d="M8 6v12"/><path d="M12 9v6"/><path d="M16 4v16"/><path d="M20 10v4"/></svg>
+      <h3>Efeitos sonoros</h3><p>Som no ponto certo. E muito mais.</p>
+    </div>
+  </div>
+  <p style="text-align:center;color:var(--mute);max-width:680px;align-self:center">Uma equipe reuniu um conjunto robusto de instruções testadas e empacotou em uma skill para o Claude, por um preço justo. Uso profissional de IA, não um prompt genérico.</p>
+</div>
+</section>
+
+<section class="narrow sec">
+  <div class="offer">
+    <span class="mono" style="letter-spacing:.12em;color:#FFB066">OFERTA PROMOCIONAL</span>
+    <span class="old">De R$ 199</span>
+    <span class="big">R$ 67</span>
+    <span class="mono" style="color:var(--mute)">PAGAMENTO ÚNICO · SEM MENSALIDADE</span>
+    <a class="btn" data-buy href="/api/checkout?src=b" style="max-width:440px">Comprar agora</a>
+    <span style="font-size:14px;color:var(--dim)">Pix ou cartão · Ambiente de pagamento seguro</span>
+  </div>
+
+  <p class="mono req">REQUISITOS: conta no Claude no plano Pro (ou superior), com acesso a skills.</p>
+
+  <div class="stack">
+    <details><summary>Como recebo depois de pagar?</summary><p>Assim que o pagamento é confirmado, o link de download aparece na tela e também é enviado para o seu e-mail, junto com o passo a passo de instalação no Claude.</p></details>
+    <details><summary>Preciso pagar o Claude à parte?</summary><p>A skill roda dentro do Claude, e a assinatura do Claude não está incluída na compra. É preciso ter o plano Pro do Claude (ou superior).</p></details>
+    <details><summary>E se eu não gostar?</summary><p>Você tem 7 dias a partir da compra para pedir o reembolso integral. Basta escrever para professionalskill@gmail.com.</p></details>
+  </div>
+</section>
+
+<footer>
+  <div class="narrow stack" style="gap:10px">
+    <span>Profissional Edit · Suporte: professionalskill@gmail.com</span>
+    <span>Produto independente, sem vínculo com a Anthropic. Claude é uma marca da Anthropic, PBC.</span>
+    <span>Este site não é afiliado ao Facebook nem à Meta Platforms, Inc.</span>
+    <span><a href="/termos/">Termos de uso</a> · <a href="/privacidade/">Política de privacidade</a></span>
+  </div>
+</footer>
+
+<div class="sticky">
+  <div><span class="old" style="font-size:14px">R$ 199</span> <strong style="font-family:'Space Grotesk',sans-serif;font-size:22px">R$ 67</strong></div>
+  <a class="btn" data-buy href="/api/checkout?src=b">Comprar agora</a>
+</div>
+
+<script>
+window.LP_COPY = {
+  'geral':      { h1: 'Seu vídeo editado enquanto você cuida do resto.', sub: 'A Profissional Edit é uma skill que faz o Claude aplicar jump cut, efeitos de cenário, iluminação e efeitos sonoros por você.' },
+  'jump-cut':   { h1: 'Esse jump cut do vídeo? A skill faz sozinha.', sub: 'A Profissional Edit corta as pausas e mantém o ritmo dentro do Claude. E ainda cuida de cenário, iluminação e som.' },
+  'cenario':    { h1: 'Esse efeito de cenário? A skill aplica por você.', sub: 'A Profissional Edit suaviza ou marca o cenário dentro do Claude. E ainda cuida de jump cut, iluminação e som.' },
+  'iluminacao': { h1: 'Essa iluminação do vídeo? A skill ajusta por você.', sub: 'A Profissional Edit corrige a luz dentro do Claude. E ainda cuida de jump cut, cenário e efeitos sonoros.' },
+  'som':        { h1: 'Esses efeitos sonoros? A skill coloca por você.', sub: 'A Profissional Edit aplica os efeitos sonoros dentro do Claude. E ainda cuida de jump cut, cenário e iluminação.' }
+};
+// Sem demo.mp4 ainda: mostra o espaço reservado.
+(function () {
+  var box = document.getElementById('video'), v = box.querySelector('video');
+  v.addEventListener('error', function () { box.classList.add('empty'); });
+  if (v.error) box.classList.add('empty');
+})();
+</script>
+<script src="/assets/config.js"></script>
+<script src="/assets/lp.js"></script>
+</body>
+</html>
