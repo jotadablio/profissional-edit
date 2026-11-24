@@ -109,7 +109,7 @@ console.log('ok  webhook aprovado envia e-mail');
 res = await webhook(new Request('https://site.com/api/webhook?data.id=111&type=payment', {
   method: 'POST', headers: { 'x-signature': 'ts=1,v1=abc', 'x-request-id': 'r' }, body: '{"type":"payment"}'
 }), process.env);
-assert.equal(res.status, 401);
+assert.equal(res.status, 200); // aceita, mas só age após consultar a API
 
 // Webhook pendente não envia e-mail
 const before2 = calls.length;
@@ -119,7 +119,16 @@ res = await webhook(new Request('https://site.com/api/webhook?data.id=222&type=p
 }), process.env);
 assert.equal(res.status, 200);
 assert.equal(calls.slice(before2).some(c => c.url.includes('resend')), false);
-console.log('ok  webhook recusa assinatura falsa e ignora pendente');
+// Aviso do painel: ID só no corpo, sem data.id na URL
+const sigBody = sign('111', 'req-body', '1704908099', 'segredo123');
+const before3 = calls.length;
+res = await webhook(new Request('https://site.com/api/webhook', {
+  method: 'POST', headers: { 'x-signature': sigBody, 'x-request-id': 'req-body' },
+  body: JSON.stringify({ type: 'payment', action: 'payment.created', data: { id: '111' } })
+}), process.env);
+assert.equal(res.status, 200);
+assert.ok(calls.slice(before3).some(c => c.url.includes('/v1/payments/111')));
+console.log('ok  webhook aceita aviso do painel (ID no corpo) e ignora pendente');
 
 // ---------------- Stripe ----------------
 process.env.STRIPE_SECRET_KEY = 'sk_test_x';

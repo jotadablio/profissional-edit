@@ -13,15 +13,19 @@ export default async (req, env) => {
   const type = body.type || url.searchParams.get('type') || url.searchParams.get('topic');
   const dataId = url.searchParams.get('data.id') || body?.data?.id || '';
 
-  // Assinatura: obrigatória quando MP_WEBHOOK_SECRET estiver definido.
+  // Assinatura do Mercado Pago. O ID vem na URL (data.id) ou só no corpo, conforme a origem do aviso,
+  // então testamos os dois. Mesmo sem assinatura válida, nada é liberado com base no aviso:
+  // o pagamento é sempre consultado direto na API com o nosso token. Por isso só registramos o alerta
+  // em vez de recusar (recusar faria o Mercado Pago marcar a entrega como falha e tentar de novo).
   if (cfg.webhookSecret) {
-    const ok = await validSignature({
-      xSignature: req.headers.get('x-signature'),
-      xRequestId: req.headers.get('x-request-id'),
-      dataId: String(url.searchParams.get('data.id') || ''),
-      secret: cfg.webhookSecret
-    });
-    if (!ok) return json({ ok: false, reason: 'assinatura inválida' }, 401);
+    const xSignature = req.headers.get('x-signature');
+    const xRequestId = req.headers.get('x-request-id');
+    const candidates = [...new Set([url.searchParams.get('data.id') || '', String(body?.data?.id || '')])];
+    let ok = false;
+    for (const id of candidates) {
+      if (await validSignature({ xSignature, xRequestId, dataId: id, secret: cfg.webhookSecret })) { ok = true; break; }
+    }
+    if (!ok) console.warn('webhook: assinatura não confere (conferindo o pagamento direto na API)', dataId);
   }
 
   if (type !== 'payment' || !/^\d{1,20}$/.test(String(dataId))) return json({ ok: true, ignored: true });
