@@ -2,6 +2,10 @@
   publish = "public"
   functions = "netlify/functions"
 
+# Valores públicos (aparecem nas páginas): não são segredos.
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "PRICE,SUPPORT_EMAIL,STATEMENT_DESCRIPTOR,PRODUCT_NAME,DOWNLOAD_URL"
+
 [functions]
   node_bundler = "esbuild"
 
