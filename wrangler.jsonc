@@ -9,6 +9,9 @@
     "not_found_handling": "404-page"
   },
   "observability": { "enabled": true },
+  "workers_dev": true,
+  // Prévias de versão não ficam públicas.
+  "preview_urls": false,
   // Valores públicos. Os segredos (MP_ACCESS_TOKEN, MP_WEBHOOK_SECRET, DOWNLOAD_URL)
   // ficam só no painel da Cloudflare, em Settings > Variables and Secrets, como "Secret".
   "vars": {
