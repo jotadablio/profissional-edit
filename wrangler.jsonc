@@ -17,7 +17,7 @@
   // Valores públicos. Os segredos (MP_ACCESS_TOKEN, MP_WEBHOOK_SECRET, DOWNLOAD_URL)
   // ficam só no painel da Cloudflare, em Settings > Variables and Secrets, como "Secret".
   "vars": {
-    "PRICE": "1",
+    "PRICE": "67",
     "SUPPORT_EMAIL": "professionalskill@gmail.com",
     "PRODUCT_NAME": "Profissional Edit - Skill de edicao de video para Claude",
     "STATEMENT_DESCRIPTOR": "PROFEDIT"
