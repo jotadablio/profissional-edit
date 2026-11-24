@@ -32,13 +32,13 @@ globalThis.fetch = async (url, opts = {}) => {
   throw new Error('fetch inesperado: ' + u);
 };
 
-const checkout = (await import('../netlify/functions/checkout.mjs')).default;
-const verify = (await import('../netlify/functions/verify.mjs')).default;
-const webhook = (await import('../netlify/functions/webhook.mjs')).default;
-const { validSignature } = await import('../netlify/lib/shared.mjs');
+const checkout = (await import('../src/handlers/checkout.js')).default;
+const verify = (await import('../src/handlers/verify.js')).default;
+const webhook = (await import('../src/handlers/webhook.js')).default;
+const { validSignature } = await import('../src/lib/shared.js');
 
 // 1. Checkout cria a preferência certa e redireciona
-let res = await checkout(new Request('https://site.com/api/checkout?src=b&v=jump-cut&utm_campaign=teste'));
+let res = await checkout(new Request('https://site.com/api/checkout?src=b&v=jump-cut&utm_campaign=teste'), process.env);
 assert.equal(res.status, 303);
 assert.equal(res.headers.get('location'), 'https://mp.test/pay?pref=pref1');
 const pref = JSON.parse(calls.at(-1).opts.body);
@@ -54,26 +54,26 @@ assert.ok(pref.external_reference.startsWith('b-jump-cut-'));
 console.log('ok  checkout');
 
 // Parâmetros maliciosos são limpos
-await checkout(new Request('https://site.com/api/checkout?src=<script>&v=../../x'));
+await checkout(new Request('https://site.com/api/checkout?src=<script>&v=../../x'), process.env);
 const pref2 = JSON.parse(calls.at(-1).opts.body);
 assert.equal(pref2.metadata.page, 'script');
 assert.equal(pref2.metadata.video, 'x');
 console.log('ok  checkout limpa parâmetros');
 
 // 2. Verify
-let d = await (await verify(new Request('https://site.com/api/verify?payment_id=111'))).json();
+let d = await (await verify(new Request('https://site.com/api/verify?payment_id=111'), process.env)).json();
 assert.equal(d.status, 'approved');
 assert.equal(d.downloadUrl, 'https://exemplo.com/skill.zip');
 assert.equal(d.emailHint, 'cl***@gmail.com');
-d = await (await verify(new Request('https://site.com/api/verify?payment_id=222'))).json();
+d = await (await verify(new Request('https://site.com/api/verify?payment_id=222'), process.env)).json();
 assert.equal(d.status, 'pending');
 assert.equal(d.downloadUrl, undefined);
-res = await verify(new Request('https://site.com/api/verify?payment_id=333'));
+res = await verify(new Request('https://site.com/api/verify?payment_id=333'), process.env);
 assert.equal(res.status, 403);
 assert.equal((await res.json()).downloadUrl, undefined);
-res = await verify(new Request('https://site.com/api/verify?payment_id=abc'));
+res = await verify(new Request('https://site.com/api/verify?payment_id=abc'), process.env);
 assert.equal(res.status, 400);
-res = await verify(new Request('https://site.com/api/verify?payment_id=999'));
+res = await verify(new Request('https://site.com/api/verify?payment_id=999'), process.env);
 assert.equal(res.status, 404);
 console.log('ok  verify (aprovado, pendente, outro produto, inválido, inexistente)');
 
@@ -83,10 +83,10 @@ function sign(dataId, reqId, ts, secret) {
   return `ts=${ts},v1=` + crypto.createHmac('sha256', secret).update(manifest).digest('hex');
 }
 const sig = sign('111', 'req-abc', '1704908010', 'segredo123');
-assert.equal(validSignature({ xSignature: sig, xRequestId: 'req-abc', dataId: '111', secret: 'segredo123' }), true);
-assert.equal(validSignature({ xSignature: sig, xRequestId: 'req-abc', dataId: '112', secret: 'segredo123' }), false);
-assert.equal(validSignature({ xSignature: sig, xRequestId: 'req-abc', dataId: '111', secret: 'errado' }), false);
-assert.equal(validSignature({ xSignature: 'lixo', xRequestId: 'x', dataId: '1', secret: 's' }), false);
+assert.equal(await validSignature({ xSignature: sig, xRequestId: 'req-abc', dataId: '111', secret: 'segredo123' }), true);
+assert.equal(await validSignature({ xSignature: sig, xRequestId: 'req-abc', dataId: '112', secret: 'segredo123' }), false);
+assert.equal(await validSignature({ xSignature: sig, xRequestId: 'req-abc', dataId: '111', secret: 'errado' }), false);
+assert.equal(await validSignature({ xSignature: 'lixo', xRequestId: 'x', dataId: '1', secret: 's' }), false);
 console.log('ok  assinatura do webhook');
 
 // 4. Webhook aprovado -> envia e-mail com idempotência
@@ -95,7 +95,7 @@ res = await webhook(new Request('https://site.com/api/webhook?source_news=webhoo
   method: 'POST',
   headers: { 'x-signature': sig, 'x-request-id': 'req-abc', 'content-type': 'application/json' },
   body: JSON.stringify({ type: 'payment', action: 'payment.updated', data: { id: '111' } })
-}));
+}), process.env);
 assert.equal(res.status, 200);
 const mail = calls.slice(before).find(c => c.url.includes('resend'));
 assert.ok(mail, 'deveria enviar e-mail');
@@ -108,7 +108,7 @@ console.log('ok  webhook aprovado envia e-mail');
 // Webhook com assinatura errada é recusado
 res = await webhook(new Request('https://site.com/api/webhook?data.id=111&type=payment', {
   method: 'POST', headers: { 'x-signature': 'ts=1,v1=abc', 'x-request-id': 'r' }, body: '{"type":"payment"}'
-}));
+}), process.env);
 assert.equal(res.status, 401);
 
 // Webhook pendente não envia e-mail
@@ -116,7 +116,7 @@ const before2 = calls.length;
 const sig2 = sign('222', 'r2', '1700000000', 'segredo123');
 res = await webhook(new Request('https://site.com/api/webhook?data.id=222&type=payment', {
   method: 'POST', headers: { 'x-signature': sig2, 'x-request-id': 'r2' }, body: '{"type":"payment","data":{"id":"222"}}'
-}));
+}), process.env);
 assert.equal(res.status, 200);
 assert.equal(calls.slice(before2).some(c => c.url.includes('resend')), false);
 console.log('ok  webhook recusa assinatura falsa e ignora pendente');
@@ -124,7 +124,7 @@ console.log('ok  webhook recusa assinatura falsa e ignora pendente');
 // ---------------- Stripe ----------------
 process.env.STRIPE_SECRET_KEY = 'sk_test_x';
 process.env.STRIPE_WEBHOOK_SECRET = 'whsec_teste';
-const { validStripeSignature, toForm } = await import('../netlify/lib/stripe.mjs');
+const { validStripeSignature, toForm } = await import('../src/lib/stripe.js');
 const sessions = {
   cs_test_paidpaidpaid: { id: 'cs_test_paidpaidpaid', status: 'complete', payment_status: 'paid', currency: 'brl', amount_total: 6700, metadata: { product: 'profissional-edit' }, customer_details: { email: 'ana@gmail.com' }, payment_intent: 'pi_1' },
   cs_test_pixpendente: { id: 'cs_test_pixpendente', status: 'complete', payment_status: 'unpaid', currency: 'brl', amount_total: 6700, metadata: { product: 'profissional-edit' } },
@@ -148,9 +148,9 @@ globalThis.fetch = async (url, opts = {}) => {
 
 assert.equal(toForm({ a: [{ b: { c: 1 } }], d: 'x' }).toString(), 'a%5B0%5D%5Bb%5D%5Bc%5D=1&d=x');
 
-const stripeCheckout = (await import('../netlify/functions/stripe-checkout.mjs')).default;
-const stripeWebhook = (await import('../netlify/functions/stripe-webhook.mjs')).default;
-res = await stripeCheckout(new Request('https://site.com/api/stripe-checkout?src=b&v=som&utm_content=ad1'));
+const stripeCheckout = (await import('../src/handlers/stripe-checkout.js')).default;
+const stripeWebhook = (await import('../src/handlers/stripe-webhook.js')).default;
+res = await stripeCheckout(new Request('https://site.com/api/stripe-checkout?src=b&v=som&utm_content=ad1'), process.env);
 assert.equal(res.status, 303);
 assert.equal(res.headers.get('location'), 'https://checkout.stripe.com/c/pay/cs_test_new');
 const form = new URLSearchParams(calls.at(-1).opts.body);
@@ -165,15 +165,15 @@ assert.equal(form.get('cancel_url'), 'https://site.com/b/?v=som');
 assert.equal(calls.at(-1).opts.headers.Authorization, 'Bearer sk_test_x');
 console.log('ok  stripe checkout');
 
-d = await (await verify(new Request('https://site.com/api/verify?session_id=cs_test_paidpaidpaid'))).json();
+d = await (await verify(new Request('https://site.com/api/verify?session_id=cs_test_paidpaidpaid'), process.env)).json();
 assert.equal(d.status, 'approved');
 assert.equal(d.value, 67);
 assert.equal(d.downloadUrl, 'https://exemplo.com/skill.zip');
-d = await (await verify(new Request('https://site.com/api/verify?session_id=cs_test_pixpendente'))).json();
+d = await (await verify(new Request('https://site.com/api/verify?session_id=cs_test_pixpendente'), process.env)).json();
 assert.equal(d.status, 'pending');
-res = await verify(new Request('https://site.com/api/verify?session_id=cs_test_baratobarato'));
+res = await verify(new Request('https://site.com/api/verify?session_id=cs_test_baratobarato'), process.env);
 assert.equal(res.status, 403);
-res = await verify(new Request('https://site.com/api/verify?session_id=../../v1/charges'));
+res = await verify(new Request('https://site.com/api/verify?session_id=../../v1/charges'), process.env);
 assert.equal(res.status, 400);
 console.log('ok  stripe verify (pago, pendente, valor errado, id malicioso)');
 
@@ -181,24 +181,24 @@ function stripeSign(body, secret, t = Math.floor(Date.now() / 1000)) {
   return `t=${t},v1=` + crypto.createHmac('sha256', secret).update(`${t}.${body}`).digest('hex');
 }
 const evt = JSON.stringify({ type: 'checkout.session.completed', data: { object: { id: 'cs_test_paidpaidpaid' } } });
-assert.equal(validStripeSignature(evt, stripeSign(evt, 'whsec_teste'), 'whsec_teste'), true);
-assert.equal(validStripeSignature(evt + ' ', stripeSign(evt, 'whsec_teste'), 'whsec_teste'), false);
-assert.equal(validStripeSignature(evt, stripeSign(evt, 'whsec_teste', 1000), 'whsec_teste'), false); // muito antigo
+assert.equal(await validStripeSignature(evt, stripeSign(evt, 'whsec_teste'), 'whsec_teste'), true);
+assert.equal(await validStripeSignature(evt + ' ', stripeSign(evt, 'whsec_teste'), 'whsec_teste'), false);
+assert.equal(await validStripeSignature(evt, stripeSign(evt, 'whsec_teste', 1000), 'whsec_teste'), false); // muito antigo
 
 const b3 = calls.length;
-res = await stripeWebhook(new Request('https://site.com/api/stripe-webhook', { method: 'POST', headers: { 'stripe-signature': stripeSign(evt, 'whsec_teste') }, body: evt }));
+res = await stripeWebhook(new Request('https://site.com/api/stripe-webhook', { method: 'POST', headers: { 'stripe-signature': stripeSign(evt, 'whsec_teste') }, body: evt }), process.env);
 assert.equal(res.status, 200);
 const smail = calls.slice(b3).find(c => c.url.includes('resend'));
 assert.ok(smail, 'stripe pago deveria enviar e-mail');
 assert.deepEqual(JSON.parse(smail.opts.body).to, ['ana@gmail.com']);
 assert.equal(smail.opts.headers['Idempotency-Key'], 'pe-stripe-cs_test_paidpaidpaid');
 
-res = await stripeWebhook(new Request('https://site.com/api/stripe-webhook', { method: 'POST', headers: { 'stripe-signature': 't=1,v1=abc' }, body: evt }));
+res = await stripeWebhook(new Request('https://site.com/api/stripe-webhook', { method: 'POST', headers: { 'stripe-signature': 't=1,v1=abc' }, body: evt }), process.env);
 assert.equal(res.status, 400);
 
 const evt2 = JSON.stringify({ type: 'checkout.session.completed', data: { object: { id: 'cs_test_pixpendente' } } });
 const b4 = calls.length;
-res = await stripeWebhook(new Request('https://site.com/api/stripe-webhook', { method: 'POST', headers: { 'stripe-signature': stripeSign(evt2, 'whsec_teste') }, body: evt2 }));
+res = await stripeWebhook(new Request('https://site.com/api/stripe-webhook', { method: 'POST', headers: { 'stripe-signature': stripeSign(evt2, 'whsec_teste') }, body: evt2 }), process.env);
 assert.equal(res.status, 200);
 assert.equal(calls.slice(b4).some(c => c.url.includes('resend')), false);
 console.log('ok  stripe webhook (e-mail no pago, recusa assinatura, ignora pendente)');

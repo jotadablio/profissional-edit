@@ -1,11 +1,11 @@
 // GET /api/verify?payment_id=123        (Mercado Pago)
 // GET /api/verify?session_id=cs_live_…  (Stripe)
 // Chamada pela página de obrigado. Consulta o pagamento na API e só libera o download se estiver aprovado.
-import { settings, getPayment, checkPayment, json } from '../lib/shared.mjs';
-import { stripeApi, checkSession } from '../lib/stripe.mjs';
+import { settings, getPayment, checkPayment, json } from '../lib/shared.js';
+import { stripeApi, checkSession } from '../lib/stripe.js';
 
-export default async (req) => {
-  const cfg = settings();
+export default async (req, env) => {
+  const cfg = settings(env);
   const q = new URL(req.url).searchParams;
   const sessionId = q.get('session_id');
   if (sessionId) return verifyStripe(cfg, sessionId);
@@ -69,4 +69,3 @@ function maskEmail(e) {
   return `${u.slice(0, 2)}***@${d}`;
 }
 
-export const config = { path: '/api/verify' };

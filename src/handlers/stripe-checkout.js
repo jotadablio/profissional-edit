@@ -1,19 +1,18 @@
 // GET /api/stripe-checkout?src=a&v=jump-cut
 // Abre o checkout da Stripe: cartão, Apple Pay, Google Pay e Link (e Pix, se a sua conta tiver o convite).
 // Os meios de pagamento exibidos são os ativados no painel da Stripe (Configurações > Formas de pagamento).
-import crypto from 'node:crypto';
-import { settings, PRODUCT_ID } from '../lib/shared.mjs';
-import { stripeApi } from '../lib/stripe.mjs';
+import { settings, PRODUCT_ID } from '../lib/shared.js';
+import { stripeApi } from '../lib/stripe.js';
 
 const clean = (s, max = 40) => String(s || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, max);
 
-export default async (req) => {
-  const cfg = settings();
+export default async (req, env) => {
+  const cfg = settings(env);
   const url = new URL(req.url);
   const origin = url.origin;
 
   if (!cfg.stripeSecret) {
-    return new Response('Checkout Stripe não configurado: defina STRIPE_SECRET_KEY no Netlify.', { status: 500 });
+    return new Response('Checkout Stripe não configurado: defina STRIPE_SECRET_KEY na Cloudflare.', { status: 500 });
   }
 
   const src = clean(url.searchParams.get('src')) || 'a';
@@ -61,4 +60,3 @@ export default async (req) => {
   return new Response(null, { status: 303, headers: { Location: session.url, 'cache-control': 'no-store' } });
 };
 
-export const config = { path: '/api/stripe-checkout' };

@@ -1,0 +1,20 @@
+{
+  // Configuração do Worker na Cloudflare (lida pelo deploy automático do GitHub).
+  "name": "profissional-edit",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page"
+  },
+  "observability": { "enabled": true },
+  // Valores públicos. Os segredos (MP_ACCESS_TOKEN, MP_WEBHOOK_SECRET, DOWNLOAD_URL)
+  // ficam só no painel da Cloudflare, em Settings > Variables and Secrets, como "Secret".
+  "vars": {
+    "PRICE": "1",
+    "SUPPORT_EMAIL": "professionalskill@gmail.com",
+    "PRODUCT_NAME": "Profissional Edit - Skill de edicao de video para Claude",
+    "STATEMENT_DESCRIPTOR": "PROFEDIT"
+  }
+}

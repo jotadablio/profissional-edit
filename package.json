@@ -2,9 +2,11 @@
   "name": "profissional-edit-lp",
   "private": true,
   "type": "module",
-  "description": "Landing page da Profissional Edit com checkout Mercado Pago (Netlify)",
+  "description": "Landing page da Profissional Edit com checkout Mercado Pago (Cloudflare Workers)",
   "engines": { "node": ">=20" },
   "scripts": {
-    "test": "node tests/run.mjs"
+    "test": "node tests/run.mjs",
+    "dev": "npx wrangler dev",
+    "deploy": "npx wrangler deploy"
   }
 }

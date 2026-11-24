@@ -1,17 +1,16 @@
 // GET /api/checkout?src=a&v=jump-cut
 // Cria uma preferência no Mercado Pago (Checkout Pro) e redireciona o comprador para pagar.
-import crypto from 'node:crypto';
-import { settings, PRODUCT_ID } from '../lib/shared.mjs';
+import { settings, PRODUCT_ID } from '../lib/shared.js';
 
 const clean = (s, max = 40) => String(s || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, max);
 
-export default async (req) => {
-  const cfg = settings();
+export default async (req, env) => {
+  const cfg = settings(env);
   const url = new URL(req.url);
   const origin = url.origin;
 
   if (!cfg.token) {
-    return new Response('Checkout ainda não configurado: defina MP_ACCESS_TOKEN no Netlify.', { status: 500 });
+    return new Response('Checkout ainda não configurado: defina MP_ACCESS_TOKEN na Cloudflare.', { status: 500 });
   }
 
   const src = clean(url.searchParams.get('src')) || 'a';
@@ -75,4 +74,3 @@ export default async (req) => {
   return new Response(null, { status: 303, headers: { Location: target, 'cache-control': 'no-store' } });
 };
 
-export const config = { path: '/api/checkout' };

@@ -1,6 +1,6 @@
 // Chamadas à API da Stripe sem biblioteca externa.
-import crypto from 'node:crypto';
-import { PRODUCT_ID } from './shared.mjs';
+import { PRODUCT_ID } from './shared.js';
+import { hmacHex, safeEqual } from './crypto.js';
 
 // Converte objeto aninhado no formato de formulário da Stripe: a[b][0][c]=valor
 export function toForm(obj, prefix = '', out = new URLSearchParams()) {
@@ -46,7 +46,7 @@ export function checkSession(s, price) {
 }
 
 // Valida o cabeçalho Stripe-Signature: "t=<ts>,v1=<hmac>"; HMAC-SHA256 de "<ts>.<corpo cru>".
-export function validStripeSignature(rawBody, header, secret, toleranceSec = 300, now = Date.now()) {
+export async function validStripeSignature(rawBody, header, secret, toleranceSec = 300, now = Date.now()) {
   if (!header || !secret) return false;
   let t = '';
   const v1s = [];
@@ -57,10 +57,6 @@ export function validStripeSignature(rawBody, header, secret, toleranceSec = 300
   }
   if (!t || !v1s.length) return false;
   if (Math.abs(now / 1000 - Number(t)) > toleranceSec) return false;
-  const expected = crypto.createHmac('sha256', secret).update(`${t}.${rawBody}`).digest('hex');
-  const a = Buffer.from(expected);
-  return v1s.some(v => {
-    const b = Buffer.from(v || '');
-    return a.length === b.length && crypto.timingSafeEqual(a, b);
-  });
+  const expected = await hmacHex(secret, `${t}.${rawBody}`);
+  return v1s.some(v => safeEqual(expected, v));
 }

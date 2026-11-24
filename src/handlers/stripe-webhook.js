@@ -1,13 +1,13 @@
 // POST /api/stripe-webhook  (eventos da Stripe)
 // Ouça os eventos: checkout.session.completed e checkout.session.async_payment_succeeded.
-import { settings, sendDeliveryEmail, json } from '../lib/shared.mjs';
-import { stripeApi, checkSession, validStripeSignature } from '../lib/stripe.mjs';
+import { settings, sendDeliveryEmail, json } from '../lib/shared.js';
+import { stripeApi, checkSession, validStripeSignature } from '../lib/stripe.js';
 
-export default async (req) => {
-  const cfg = settings();
+export default async (req, env) => {
+  const cfg = settings(env);
   const raw = await req.text();
 
-  if (!validStripeSignature(raw, req.headers.get('stripe-signature'), cfg.stripeWebhookSecret)) {
+  if (!(await validStripeSignature(raw, req.headers.get('stripe-signature'), cfg.stripeWebhookSecret))) {
     return json({ ok: false, reason: 'assinatura inválida' }, 400);
   }
 
@@ -38,4 +38,3 @@ export default async (req) => {
   return sent ? json({ ok: true }) : json({ ok: false }, 500);
 };
 
-export const config = { path: '/api/stripe-webhook' };

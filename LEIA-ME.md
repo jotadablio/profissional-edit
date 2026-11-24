@@ -10,7 +10,7 @@ Este projeto já vem pronto para colocar no ar:
 - **Pixel do Meta** com os eventos PageView, ViewContent, InitiateCheckout e Purchase.
 - Modelos de termos de uso e política de privacidade.
 
-Hospedagem: **Netlify**, que é grátis e permite uso comercial no plano gratuito.
+Hospedagem: **Cloudflare Workers**, grátis, sem selo de propaganda e com uso comercial permitido. As páginas são servidas sem limite; a parte de pagamento tem até 100.000 requisições por dia no plano grátis.
 
 ---
 
@@ -21,17 +21,14 @@ public/                 páginas (o que o visitante vê)
   index.html            versão A
   b/index.html          versão B
   obrigado/index.html   confirma o pagamento e libera o download
-  termos/  privacidade/ textos legais (modelos)
-  assets/config.js      <- coloque aqui o ID do Pixel
+  termos/  privacidade/ textos legais
+  assets/config.js      <- ID do Pixel e formas de pagamento
   assets/lp.js          título adaptável, links de compra e Pixel
-  assets/demo.mp4       <- (você adiciona) vídeo da versão B
-netlify/functions/      servidor
-  checkout.mjs          /api/checkout  cria o pagamento e manda o cliente ao Mercado Pago
-  verify.mjs            /api/verify    confere o pagamento (Mercado Pago ou Stripe) antes de liberar o download
-  webhook.mjs           /api/webhook   recebe o aviso do Mercado Pago e envia o e-mail
-  stripe-checkout.mjs   /api/stripe-checkout  abre o checkout da Stripe
-  stripe-webhook.mjs    /api/stripe-webhook   recebe o aviso da Stripe e envia o e-mail
-netlify/lib/            funções em comum (shared.mjs, stripe.mjs)
+  _headers              cabeçalhos (obrigado fora do Google)
+src/worker.js           servidor: envia /api/* para os handlers e o resto para public/
+src/handlers/           checkout, verify, webhook, stripe-checkout, stripe-webhook
+src/lib/                funções em comum (Mercado Pago, Stripe, HMAC)
+wrangler.jsonc          configuração da Cloudflare e valores públicos (PRICE etc.)
 tests/run.mjs           testes (rode com: node tests/run.mjs)
 ```
 
@@ -48,39 +45,34 @@ tests/run.mjs           testes (rode com: node tests/run.mjs)
 ### 2. Arquivo da skill (5 min)
 Suba o arquivo da skill (.zip com o guia de instalação dentro) no Google Drive ou no Dropbox e gere um link de compartilhamento do tipo **"qualquer pessoa com o link"**. Esse link é o `DOWNLOAD_URL` e só aparece para quem pagou.
 
-### 3. Subir o projeto (15 min)
-1. Crie uma conta no **github.com**, depois um repositório **privado** e, em seguida, use **Add file > Upload files**. Arraste o **conteúdo** desta pasta, sem a pasta em volta.
-2. Crie uma conta no **netlify.com**, clique em **Add new project > Import an existing project > GitHub** e escolha o repositório.
-3. Não mude nada nas configurações de build, porque o `netlify.toml` já cuida disso. Clique em **Deploy**.
+### 3. Subir o projeto (Cloudflare)
+1. Coloque estes arquivos num repositório do GitHub.
+2. Em **dash.cloudflare.com**, vá em **Workers & Pages > Create > Import a repository**, conecte o GitHub e escolha o repositório.
+3. Deixe o comando de deploy padrão (`npx wrangler deploy`). O `wrangler.jsonc` já diz tudo o que a Cloudflare precisa.
+4. Cada push na branch `main` publica o site sozinho.
 
-> O "arrastar e soltar" do Netlify (Netlify Drop) **não** publica as funções de pagamento. Use o GitHub.
+### 4. Variáveis
+- **Valores públicos** (preço, e-mail de suporte, nome do produto) ficam no `wrangler.jsonc`, em `vars`. Para mudar o preço, edite `PRICE` ali e faça push.
+- **Segredos** ficam só no painel: **Workers & Pages > profissional-edit > Settings > Variables and Secrets > Add**, com o tipo **Secret**:
 
-### 4. Variáveis de ambiente
-No Netlify, vá em **Project configuration > Environment variables > Add a variable**:
-
-| Variável | Obrigatória | Exemplo |
+| Segredo | Obrigatório | Exemplo |
 |---|---|---|
-| `MP_ACCESS_TOKEN` | sim | `APP_USR-...` (ou `TEST-...` durante o teste) |
-| `DOWNLOAD_URL` | sim | link do Drive do passo 2 |
-| `PRICE` | não (padrão 67) | `67` |
-| `MP_WEBHOOK_SECRET` | recomendada | chave do passo 6 |
-| `RESEND_API_KEY` | para o e-mail | `re_...` (passo 8) |
-| `EMAIL_FROM` | para o e-mail | `Profissional Edit <entrega@seudominio.com.br>` |
-| `SUPPORT_EMAIL` | não | `suporte@seudominio.com.br` |
-| `STATEMENT_DESCRIPTOR` | não | `PROFEDIT` (nome que aparece na fatura do cartão) |
-| `STRIPE_SECRET_KEY` | só com Stripe | `sk_live_...` (passo 10) |
-| `STRIPE_WEBHOOK_SECRET` | só com Stripe | `whsec_...` (passo 10) |
+| `MP_ACCESS_TOKEN` | sim | `APP_USR-...` |
+| `MP_WEBHOOK_SECRET` | sim | assinatura do webhook (passo 6) |
+| `DOWNLOAD_URL` | sim | link do arquivo da skill (fica fora do GitHub) |
+| `RESEND_API_KEY` / `EMAIL_FROM` | para o e-mail | passo 8 |
+| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | só com Stripe | passo 10 |
 
-**Depois de mudar qualquer variável:** vá em **Deploys > Trigger deploy > Deploy site**.
+Os segredos não somem quando o site é publicado de novo.
 
 ### 5. Domínio
-No Netlify, abra **Domain management > Add a domain** e siga as instruções de DNS que ele mostra para o seu registrador (Registro.br, por exemplo). O HTTPS é ativado sozinho.
+No painel da Cloudflare, abra o Worker em **Settings > Domains & Routes > Add > Custom domain**. O domínio precisa estar na Cloudflare (dá para transferir o DNS de graça a partir do Registro.br). O HTTPS é ativado sozinho.
 
 ### 6. Webhook do Mercado Pago
 1. Na sua aplicação do Mercado Pago, abra **Webhooks > Configurar notificações**.
 2. Em **Modo produção**, use a URL `https://SEUDOMINIO/api/webhook`.
 3. Marque o evento **Pagamentos** e salve.
-4. Clique para revelar a **assinatura secreta**, copie e coloque em `MP_WEBHOOK_SECRET`. Faça um novo deploy.
+4. Clique para revelar a **assinatura secreta**, copie e coloque em `MP_WEBHOOK_SECRET`. 
 
 ### 7. Teste antes de anunciar
 1. Com o `MP_ACCESS_TOKEN` de **teste**, abra o site, clique em comprar e pague com um **cartão de teste** (a lista está na documentação do Checkout Pro) usando uma conta de comprador de teste.

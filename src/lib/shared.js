@@ -1,26 +1,25 @@
 // Funções e configuração compartilhadas entre os endpoints.
-import crypto from 'node:crypto';
+import { hmacHex, safeEqual } from './crypto.js';
 
 export const PRODUCT_ID = 'profissional-edit';
 
-export function env(name, fallback = '') {
-  const v = process.env[name];
-  return v === undefined || v === '' ? fallback : v;
-}
-
-export function settings() {
+export function settings(env = {}) {
+  const get = (name, fallback = '') => {
+    const v = env[name];
+    return v === undefined || v === null || v === '' ? fallback : String(v);
+  };
   return {
-    token: env('MP_ACCESS_TOKEN'),
-    price: Number(env('PRICE', '67')),
-    productName: env('PRODUCT_NAME', 'Profissional Edit - Skill de edição de vídeo para Claude'),
-    downloadUrl: env('DOWNLOAD_URL'),
-    webhookSecret: env('MP_WEBHOOK_SECRET'),
-    resendKey: env('RESEND_API_KEY'),
-    emailFrom: env('EMAIL_FROM'),
-    supportEmail: env('SUPPORT_EMAIL'),
-    statementDescriptor: env('STATEMENT_DESCRIPTOR', 'PROFEDIT'),
-    stripeSecret: env('STRIPE_SECRET_KEY'),
-    stripeWebhookSecret: env('STRIPE_WEBHOOK_SECRET')
+    token: get('MP_ACCESS_TOKEN'),
+    price: Number(get('PRICE', '67')),
+    productName: get('PRODUCT_NAME', 'Profissional Edit - Skill de edição de vídeo para Claude'),
+    downloadUrl: get('DOWNLOAD_URL'),
+    webhookSecret: get('MP_WEBHOOK_SECRET'),
+    resendKey: get('RESEND_API_KEY'),
+    emailFrom: get('EMAIL_FROM'),
+    supportEmail: get('SUPPORT_EMAIL'),
+    statementDescriptor: get('STATEMENT_DESCRIPTOR', 'PROFEDIT'),
+    stripeSecret: get('STRIPE_SECRET_KEY'),
+    stripeWebhookSecret: get('STRIPE_WEBHOOK_SECRET')
   };
 }
 
@@ -95,7 +94,7 @@ export function checkPayment(p, price) {
 
 // Valida o cabeçalho x-signature do webhook (documentação do Mercado Pago):
 // manifest = "id:<data.id>;request-id:<x-request-id>;ts:<ts>;"  ->  HMAC-SHA256 com a chave secreta.
-export function validSignature({ xSignature, xRequestId, dataId, secret }) {
+export async function validSignature({ xSignature, xRequestId, dataId, secret }) {
   if (!xSignature || !secret) return false;
   let ts = '', v1 = '';
   for (const part of xSignature.split(',')) {
@@ -108,7 +107,5 @@ export function validSignature({ xSignature, xRequestId, dataId, secret }) {
   if (dataId) manifest += `id:${/^[a-z0-9]+$/i.test(dataId) ? dataId.toLowerCase() : dataId};`;
   if (xRequestId) manifest += `request-id:${xRequestId};`;
   manifest += `ts:${ts};`;
-  const expected = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
-  const a = Buffer.from(expected, 'utf8'), b = Buffer.from(v1, 'utf8');
-  return a.length === b.length && crypto.timingSafeEqual(a, b);
+  return safeEqual(await hmacHex(secret, manifest), v1);
 }
