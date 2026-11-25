@@ -3,7 +3,7 @@ window.LP_CONFIG = {
   // ID do seu Pixel do Meta (Gerenciador de Eventos > Fontes de dados). Deixe '' para desligar.
   pixelId: '',
   // Preço exibido e enviado ao Pixel. O preço cobrado de verdade fica na variável PRICE do servidor.
-  price: 67,
+  price: 19.9,
   currency: 'BRL',
   // Formas de pagamento oferecidas no botão de compra:
   //   ['mercadopago']            -> vai direto para o Mercado Pago (Pix e cartão)

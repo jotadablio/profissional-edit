@@ -76,7 +76,7 @@
     document.head.appendChild(css);
 
     var labels = {
-      mercadopago: ['Pix', 'Aprovação na hora · também aceita cartão em até 12x',
+      mercadopago: ['Pix', 'Aprovação na hora · também aceita cartão',
         '<svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 9-9 9-9-9z"/><path d="M8.5 12l3.5-3.5 3.5 3.5-3.5 3.5z"/></svg>'],
       stripe: ['Cartão, Apple Pay ou Google Pay', 'Visa e Mastercard · pagamento em um toque',
         '<svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>']
